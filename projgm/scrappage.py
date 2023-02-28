@@ -1,4 +1,4 @@
-from selenium import webdriver
+import requests
 from multiprocessing import Pool, cpu_count
 from math import floor
 
@@ -6,18 +6,17 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from time import *
 
-options = webdriver.ChromeOptions()
-options.add_argument('headless')
-url = "https://ec.europa.eu/clima/ets/ohaDetails.do?accountID=90574&action=all&languageCode=en&returnURL=installationName%3D%26accountHolder%3D%26search%3DSearch%26permitIdentifier%3D%26form%3Doha%26searchType%3Doha%26mainActivityType%3D-1%26currentSortSettings%3D%26installationIdentifier%3D%26languageCode%3Den&registryCode=AT"
+
+url = "https://ec.europa.eu/clima/ets/ohaDetails.do?accountID=94192&action=all&languageCode=en&returnURL=resultList.currentPageNumber%3D1%26installationName%3D%26accountHolder%3D%26search%3DSearch%26permitIdentifier%3D%26form%3Doha%26searchType%3Doha%26mainActivityType%3D42%26currentSortSettings%3D%26installationIdentifier%3D%26languageCode%3Den&registryCode=BE"
+
 #ligne 54
 def getpage():
-    driver=webdriver.Chrome(executable_path="chromedriver", options=options)
-    driver.get(url)
-    data=driver.page_source
+   
+    data = requests.get(url)
     
-    soup = BeautifulSoup(data,"html.parser")
+    soup = BeautifulSoup(data.text,"html.parser")
     op_info = operator_info(soup)
-    compliance = compliance_info(soup,True) #ne fonctionne que pour les operateurs aériens
+    compliance = compliance_info(soup,False) #ne fonctionne que pour les operateurs aériens
     
     
 def compliance_info(soup,is_airline):
@@ -68,7 +67,7 @@ def operator_info(soup):
     holding_infos.drop(index=0,axis=1,inplace=True)
     holding_infos.reset_index(drop=True, inplace=True)
     holding_infos.drop(columns=6,inplace=True)
-    contact_info = dfs[1]
+    contact_info = dfs[2]
     contact_info.drop(index=0,axis=1,inplace=True)
     contact_info.drop(index=1,axis=1,inplace=True)
     contact_info.reset_index(drop=True, inplace=True)
@@ -88,7 +87,7 @@ def operator_info(soup):
     concat_2.reset_index(drop=True,inplace=True)
     concat_final = pd.concat([concat_1,concat_2],axis=1)
     row_list = concat_final.loc[1, :].values.flatten().tolist()
-    
+
     return row_list
     
     
