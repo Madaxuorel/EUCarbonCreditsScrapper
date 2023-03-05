@@ -7,16 +7,18 @@ from bs4 import BeautifulSoup
 from time import *
 
 
-url = "https://ec.europa.eu/clima/ets/ohaDetails.do?accountID=94192&action=all&languageCode=en&returnURL=resultList.currentPageNumber%3D1%26installationName%3D%26accountHolder%3D%26search%3DSearch%26permitIdentifier%3D%26form%3Doha%26searchType%3Doha%26mainActivityType%3D42%26currentSortSettings%3D%26installationIdentifier%3D%26languageCode%3Den&registryCode=BE"
+url = "https://ec.europa.eu/clima/ets/oha.do?form=oha&languageCode=en&accountHolder=&installationIdentifier=&installationName=&permitIdentifier=&mainActivityType=-1&searchType=oha&currentSortSettings=&nextList=Next%3E&resultList.currentPageNumber="
+fromPage = 0
+toPage = 1
+links = []
 
 #ligne 54
-def getpage():
-   
-    data = requests.get(url)
+def getpage(link, isAirline):
+    data=requests.get(link)
     
     soup = BeautifulSoup(data.text,"html.parser")
     op_info = operator_info(soup)
-    compliance = compliance_info(soup,False) #ne fonctionne que pour les operateurs aériens
+    compliance = compliance_info(soup,isAirline) #ne fonctionne que pour les operateurs aériens
     
     
 def compliance_info(soup,is_airline):
@@ -91,7 +93,14 @@ def operator_info(soup):
     return row_list
     
     
-    
-    
-    
-getpage()
+for i in range(fromPage, toPage):
+    data = requests.get(url + str(i))
+
+    soup = BeautifulSoup(data.text,"html.parser")
+    button = soup.find_all('a', {'class': 'listlink'})
+    for b in button:
+        if "Details - All Phases" in b.text:
+            tmp = b.parent.parent.parent.parent.parent
+            links.append((b['href'], not "Aircraft operator activities" in tmp.text))
+for link, isAirline in links[0:1]:
+    getpage(link, isAirline)
