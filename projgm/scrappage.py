@@ -20,7 +20,6 @@ def getpage(link, isAirline):
     op_info = operator_info(soup)
     compliance = compliance_info(soup,isAirline) #ne fonctionne que pour les operateurs aériens
     
-    
 def compliance_info(soup,is_airline):
     if is_airline:
         tables = soup.findChildren('table')[5]
@@ -57,7 +56,7 @@ def compliance_info(soup,is_airline):
         
         total.append(df.loc[i, :].values.flatten().tolist())
     
-    return total
+    return df
      
     
 def operator_info(soup):
@@ -95,12 +94,11 @@ def operator_info(soup):
     
 for i in range(fromPage, toPage):
     data = requests.get(url + str(i))
-
     soup = BeautifulSoup(data.text,"html.parser")
     button = soup.find_all('a', {'class': 'listlink'})
     for b in button:
         if "Details - All Phases" in b.text:
             tmp = b.parent.parent.parent.parent.parent
-            links.append((b['href'], not "Aircraft operator activities" in tmp.text))
-for link, isAirline in links[0:1]:
+            links.append((b['href'], "Aircraft operator activities" in tmp.text))
+for link, isAirline in links[0:len(links)]:
     getpage(link, isAirline)
