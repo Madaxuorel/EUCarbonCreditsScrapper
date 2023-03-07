@@ -5,12 +5,18 @@ from math import floor
 import pandas as pd
 from bs4 import BeautifulSoup
 from time import *
-
-
+import math
+from csv import writer
 url = "https://ec.europa.eu/clima/ets/oha.do?form=oha&languageCode=en&accountHolder=&installationIdentifier=&installationName=&permitIdentifier=&mainActivityType=-1&searchType=oha&currentSortSettings=&nextList=Next%3E&resultList.currentPageNumber="
-fromPage = 0
-toPage = 1
+fromPage = 15
+toPage = 20
 links = []
+CH_countries=["Belgium","Croatia","Finland","France","Allemagne","Greece","Hungary","Iceland","Ireland","Italy","Latvia","Lituania","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Sweden","United Kingdom"]
+
+def write(op_info,compliance):
+    op_info.append(compliance)
+    with open("results2.csv",mode="a+",newline='') as csv:
+        writer(csv,delimiter=",").writerow(op_info)
 
 #ligne 54
 def getpage(link, isAirline):
@@ -19,6 +25,7 @@ def getpage(link, isAirline):
     soup = BeautifulSoup(data.text,"html.parser")
     op_info = operator_info(soup)
     compliance = compliance_info(soup,isAirline) #ne fonctionne que pour les operateurs aériens
+    write(op_info,compliance)
     
 def compliance_info(soup,is_airline):
     if is_airline:
@@ -51,12 +58,22 @@ def compliance_info(soup,is_airline):
         df.drop(index=33,axis=0,inplace=True)
         
     total=[]
-    
+    totall=[]
+    totalll=[]
     for i in range(2,28):
         
-        total.append(df.loc[i, :].values.flatten().tolist())
+        total.append((df.loc[i, :].values.flatten().tolist()))
+
+ 
+
+    for row in total:
+        totall.append([str(element) for element in row])
     
-    return df
+
+    for row in totall:
+        totalll.append(";".join(row))
+        
+    return "/".join(totalll)
      
     
 def operator_info(soup):
@@ -91,7 +108,14 @@ def operator_info(soup):
 
     return row_list
     
-    
+
+def is_in(liste, string):
+    for e in liste:
+        if e in string:
+            return True
+        else:
+            return False
+
 for i in range(fromPage, toPage):
     data = requests.get(url + str(i))
     soup = BeautifulSoup(data.text,"html.parser")
@@ -99,6 +123,7 @@ for i in range(fromPage, toPage):
     for b in button:
         if "Details - All Phases" in b.text:
             tmp = b.parent.parent.parent.parent.parent
+           
             links.append((b['href'], "Aircraft operator activities" in tmp.text))
 for link, isAirline in links[0:len(links)]:
     getpage(link, isAirline)
