@@ -1,31 +1,40 @@
 import requests
 from multiprocessing import Pool, cpu_count
 from math import floor
-
 import pandas as pd
 from bs4 import BeautifulSoup
+from requests.exceptions import ConnectionError
+from http.client import RemoteDisconnected
 from time import *
 import math
 from csv import writer
 url = "https://ec.europa.eu/clima/ets/oha.do?form=oha&languageCode=en&accountHolder=&installationIdentifier=&installationName=&permitIdentifier=&mainActivityType=-1&searchType=oha&currentSortSettings=&nextList=Next%3E&resultList.currentPageNumber="
-fromPage = 15
-toPage = 20
+fromPage = 0
+toPage = 895
 links = []
+totalcrashes=0
+totallinks=0
 CH_countries=["Belgium","Croatia","Finland","France","Allemagne","Greece","Hungary","Iceland","Ireland","Italy","Latvia","Lituania","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Sweden","United Kingdom"]
 
-def write(op_info,compliance):
+def write(op_info,compliance,CH):
     op_info.append(compliance)
+    op_info.append(CH)
     with open("results2.csv",mode="a+",newline='') as csv:
         writer(csv,delimiter=",").writerow(op_info)
 
 #ligne 54
-def getpage(link, isAirline):
+def getpage(link, isAirline,is_CH):
+    
     data=requests.get(link)
     
     soup = BeautifulSoup(data.text,"html.parser")
     op_info = operator_info(soup)
     compliance = compliance_info(soup,isAirline) #ne fonctionne que pour les operateurs aériens
-    write(op_info,compliance)
+    if is_CH and isAirline:
+        CH=CH_scrap(soup)
+    else:
+        CH=""
+    write(op_info,compliance,CH)
     
 def compliance_info(soup,is_airline):
     if is_airline:
@@ -72,10 +81,40 @@ def compliance_info(soup,is_airline):
 
     for row in totall:
         totalll.append(";".join(row))
-        
+    
+    
+    
     return "/".join(totalll)
      
+def CH_scrap(soup):
+    tables = soup.findChildren('table')[5]
+    df=pd.read_html(tables.findChildren(["td"])[56].prettify())[8]
+    df.drop(index=28,axis=0,inplace=True)
+    df.drop(index=29,axis=0,inplace=True)
+    df.drop(index=30,axis=0,inplace=True)
+    df.drop(index=31,axis=0,inplace=True)
+    df.drop(index=32,axis=0,inplace=True)
+    df.drop(index=0,axis=0,inplace=True)
+    df.drop(index=1,axis=0,inplace=True)
+    df.drop(columns=9,axis=1,inplace=True)
+    df.drop(columns=8,axis=1,inplace=True)
+    total=[]
+    totall=[]
+    totalll=[]
+    for i in range(2,28):
+        
+        total.append((df.loc[i, :].values.flatten().tolist()))
+
+ 
+
+    for row in total:
+        totall.append([str(element) for element in row])
     
+
+    for row in totall:
+        totalll.append(";".join(row))
+    return "/".join(totalll)
+
 def operator_info(soup):
     
     tables = soup.findChildren('table')[5]
@@ -116,14 +155,25 @@ def is_in(liste, string):
         else:
             return False
 
-for i in range(fromPage, toPage):
-    data = requests.get(url + str(i))
-    soup = BeautifulSoup(data.text,"html.parser")
-    button = soup.find_all('a', {'class': 'listlink'})
-    for b in button:
-        if "Details - All Phases" in b.text:
-            tmp = b.parent.parent.parent.parent.parent
-           
-            links.append((b['href'], "Aircraft operator activities" in tmp.text))
-for link, isAirline in links[0:len(links)]:
-    getpage(link, isAirline)
+
+if __name__ == "__main__":
+    for i in range(fromPage, toPage):
+        try:
+            print("page {}".format(i))
+            data = requests.get(url + str(i))
+            soup = BeautifulSoup(data.text,"html.parser")
+            button = soup.find_all('a', {'class': 'listlink'})
+            for b in button:
+                if "Details - All Phases" in b.text:
+                    tmp = b.parent.parent.parent.parent.parent
+                    
+                    links.append((b['href'], "Aircraft operator activities" in tmp.text, is_in(CH_countries,tmp.text)))
+                
+            for link, isAirline,is_CH in links[0:len(links)]:
+                totallinks+=1
+                
+                getpage(link, isAirline,is_CH)
+        
+        except ConnectionError:
+            totalcrashes+=1
+            print("connection error, total crashes = {}".format(totalcrashes))
