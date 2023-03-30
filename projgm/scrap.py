@@ -9,16 +9,22 @@ from time import *
 #composition lignes : 0-15 infos + 2 details
 
 url = "https://ec.europa.eu/clima/ets/transaction.do;EUROPA_EUTLPUBLI001_PRD_JSESSIONID=C1IgnSrb9RcUm5vE6ZA66pQQc8bl7zrqNocLBdUJAFZXZ0Ni__Kj!-1038548499?languageCode=fr&startDate=&endDate=&transactionStatus=4&fromCompletionDate=&toCompletionDate=&transactionID=&transactionType=-1&suppTransactionType=-1&originatingRegistry=-1&destinationRegistry=-1&originatingAccountType=-1&destinationAccountType=-1&originatingAccountIdentifier=&destinationAccountIdentifier=&originatingAccountHolder=&destinationAccountHolder=&currentSortSettings=&nextList=Next%3E&resultList.currentPageNumber="
-
-limit = 100
+lower = 2900
+limit = 3000
 
 def getPageData(n):
     dictlistTmp = []
-    try:
-        data = requests.get(url + str(n))
-    except:
-        print(f"error on page {n}")
-        return dictlistTmp
+    while True:
+        try:
+            data = requests.get(url + str(n))
+            if data.status_code == 200:
+                break
+            else:
+                sleep(1)
+                print(f"wait on page {n}")
+        except:
+            print(f"error on page {n}")
+            sleep(1)
     soup = BeautifulSoup(data.text,"html.parser")
     tables = soup.findChildren('table')[7]
     lines = tables.findChildren(['td'])
@@ -79,7 +85,7 @@ def export(name):
 
 if __name__ == "__main__":
     starttime = time()
-    for i in range(0, limit, 100):
+    for i in range(lower, limit, 100):
         dictlist = []
         print(f"processing batch {i} to {i+100}")
         getsoup(dictlist, i, i+100)

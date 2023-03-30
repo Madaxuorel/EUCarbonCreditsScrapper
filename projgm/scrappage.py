@@ -9,7 +9,7 @@ from time import *
 import math
 from csv import writer
 url = "https://ec.europa.eu/clima/ets/oha.do?form=oha&languageCode=en&accountHolder=&installationIdentifier=&installationName=&permitIdentifier=&mainActivityType=-1&searchType=oha&currentSortSettings=&nextList=Next%3E&resultList.currentPageNumber="
-fromPage = 0
+fromPage = 80
 toPage = 895
 links = []
 totalcrashes=0
@@ -24,8 +24,12 @@ def write(op_info,compliance,CH):
 
 #ligne 54
 def getpage(link, isAirline,is_CH):
-    
-    data=requests.get(link)
+    while True:
+        data=requests.get(link)
+        if data.status_code == 200:
+            break
+        else:
+            sleep(1)
     
     soup = BeautifulSoup(data.text,"html.parser")
     op_info = operator_info(soup)
@@ -155,25 +159,44 @@ def is_in(liste, string):
         else:
             return False
 
+def processPage(i):
+    global totallinks, totalcrashes
+    try:
+        print("page {}".format(i))
+        while True:
+            data = requests.get(url + str(i))
+            if data.status_code == 200:
+                break
+            else:
+                sleep(1)
+        soup = BeautifulSoup(data.text,"html.parser")
+        button = soup.find_all('a', {'class': 'listlink'})
+        for b in button:
+            if "Details - All Phases" in b.text:
+                tmp = b.parent.parent.parent.parent.parent
+                
+                links.append((b['href'], "Aircraft operator activities" in tmp.text, is_in(CH_countries,tmp.text)))
+            
+        for link, isAirline,is_CH in links[0:len(links)]:
+            totallinks+=1
+            
+            getpage(link, isAirline,is_CH)
+    
+    except ConnectionError:
+        totalcrashes+=1
+        print("connection error, total crashes = {}".format(totalcrashes))
 
 if __name__ == "__main__":
-    for i in range(fromPage, toPage):
-        try:
-            print("page {}".format(i))
-            data = requests.get(url + str(i))
-            soup = BeautifulSoup(data.text,"html.parser")
-            button = soup.find_all('a', {'class': 'listlink'})
-            for b in button:
-                if "Details - All Phases" in b.text:
-                    tmp = b.parent.parent.parent.parent.parent
-                    
-                    links.append((b['href'], "Aircraft operator activities" in tmp.text, is_in(CH_countries,tmp.text)))
-                
-            for link, isAirline,is_CH in links[0:len(links)]:
-                totallinks+=1
-                
-                getpage(link, isAirline,is_CH)
+    pool = Pool()
+    ITERATION_COUNT = cpu_count()-1 #-1 pour ne pas faire douiller l'ordinateur
+
+    count_per_iteration = floor((toPage-fromPage)/int(ITERATION_COUNT))
+
+    for i in range(0, ITERATION_COUNT-1):
+        pool.map(processPage, [n for n in range(count_per_iteration*i+fromPage, count_per_iteration*(i+1)+fromPage)])
+        pool.map(processPage, [n for n in range(count_per_iteration*(ITERATION_COUNT-1)+fromPage, toPage)])
+
+    pool.close()
+    pool.join()
+    
         
-        except ConnectionError:
-            totalcrashes+=1
-            print("connection error, total crashes = {}".format(totalcrashes))
