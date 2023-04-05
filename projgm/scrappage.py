@@ -9,11 +9,12 @@ from time import *
 import math
 from csv import writer
 url = "https://ec.europa.eu/clima/ets/oha.do?form=oha&languageCode=en&accountHolder=&installationIdentifier=&installationName=&permitIdentifier=&mainActivityType=-1&searchType=oha&currentSortSettings=&nextList=Next%3E&resultList.currentPageNumber="
-fromPage = 80
-toPage = 895
+fromPage = 1
+toPage = 897
 links = []
 totalcrashes=0
 totallinks=0
+done = []
 CH_countries=["Belgium","Croatia","Finland","France","Allemagne","Greece","Hungary","Iceland","Ireland","Italy","Latvia","Lituania","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Sweden","United Kingdom"]
 
 def write(op_info,compliance,CH):
@@ -24,13 +25,16 @@ def write(op_info,compliance,CH):
 
 #ligne 54
 def getpage(link, isAirline,is_CH):
+    if link in done:
+        return
     while True:
         data=requests.get(link)
         if data.status_code == 200:
             break
         else:
             sleep(1)
-    
+
+    done.append(link)    
     soup = BeautifulSoup(data.text,"html.parser")
     op_info = operator_info(soup)
     compliance = compliance_info(soup,isAirline) #ne fonctionne que pour les operateurs aériens
@@ -194,7 +198,7 @@ if __name__ == "__main__":
 
     for i in range(0, ITERATION_COUNT-1):
         pool.map(processPage, [n for n in range(count_per_iteration*i+fromPage, count_per_iteration*(i+1)+fromPage)])
-        pool.map(processPage, [n for n in range(count_per_iteration*(ITERATION_COUNT-1)+fromPage, toPage)])
+    pool.map(processPage, [n for n in range(count_per_iteration*(ITERATION_COUNT-1)+fromPage, toPage)])
 
     pool.close()
     pool.join()
