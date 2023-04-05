@@ -36,7 +36,7 @@ def getpage(link, isAirline,is_CH):
 
     done.append(link)    
     soup = BeautifulSoup(data.text,"html.parser")
-    op_info = operator_info(soup)
+    op_info = operator_info(soup, link)
     compliance = compliance_info(soup,isAirline) #ne fonctionne que pour les operateurs aériens
     if is_CH and isAirline:
         CH=CH_scrap(soup)
@@ -123,7 +123,7 @@ def CH_scrap(soup):
         totalll.append(";".join(row))
     return "/".join(totalll)
 
-def operator_info(soup):
+def operator_info(soup, link):
     
     tables = soup.findChildren('table')[5]
     lines = tables.findChildren(['td'])[54]
@@ -136,8 +136,12 @@ def operator_info(soup):
     contact_info.drop(index=0,axis=1,inplace=True)
     contact_info.drop(index=1,axis=1,inplace=True)
     contact_info.reset_index(drop=True, inplace=True)
-    
-    dfs = pd.read_html(lines.findChildren("td")[40].prettify())
+    try:
+
+        dfs = pd.read_html(lines.findChildren("td")[40].prettify())
+    except:
+        print(link)
+        return
     operator_infos = dfs[0]
     operator_infos.drop(index=0,axis=1,inplace=True)
     operator_infos.drop(columns=10,inplace=True)
