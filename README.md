@@ -1,9 +1,16 @@
-# projeting2
+## Utilisation Scrapping
 
-Exctraction de données sur le marché du carbone européen sur 
+### Partie "transaction"
 
-https://ec.europa.eu/clima/ets/transaction.do?languageCode=en&startDate=&endDate=&transactionStatus=4&fromCompletionDate=&toCompletionDate=&transactionID=&transactionType=-1&suppTransactionType=-1&originatingRegistry=-1&destinationRegistry=-1&originatingAccountType=-1&destinationAccountType=-1&originatingAccountIdentifier=&destinationAccountIdentifier=&originatingAccountHolder=&destinationAccountHolder=&search=Search&currentSortSettings=
+- Commande pour lancer le scrapping :  ```python3 scrap.py```
+- Il est fait de manière séquentiel par tranches de 100 pages, dans des fichiers .csv nommée "page_début-page_fin.csv"
 
-et
+### Partie Comptes Opérateurs
 
-https://ec.europa.eu/clima/ets/oha.do?form=oha&languageCode=en&accountHolder=&installationIdentifier=&installationName=&permitIdentifier=&mainActivityType=-1&search=Search&searchType=oha&currentSortSettings=
+- Commande pour lancer le scrapping :  ```python3 scrappage.py```
+- Résultat dans fichier csv resluts2.csv
+- **Remarque :** Les comptes n'apparaissent pas dans l'ordre du site mais dans un ordre aléatoire, à cause du multi-threading 
+
+### Mise à jour
+
+-

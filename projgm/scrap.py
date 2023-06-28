@@ -12,8 +12,8 @@ from time import *
 url = "https://ec.europa.eu/clima/ets/transaction.do;EUROPA_EUTLPUBLI001_PRD_JSESSIONID=C1IgnSrb9RcUm5vE6ZA66pQQc8bl7zrqNocLBdUJAFZXZ0Ni__Kj!-1038548499?languageCode=fr&startDate=&endDate=&transactionStatus=4&fromCompletionDate=&toCompletionDate=&transactionID=&transactionType=-1&suppTransactionType=-1&originatingRegistry=-1&destinationRegistry=-1&originatingAccountType=-1&destinationAccountType=-1&originatingAccountIdentifier=&destinationAccountIdentifier=&originatingAccountHolder=&destinationAccountHolder=&currentSortSettings=&nextList=Next%3E&resultList.currentPageNumber="
 
 # spécification de l'intervalle des pages à scrapper
-lower = 2900
-limit = 3000
+lower = 0
+limit = 58526
 
 
 def getPageData(n: int) -> list:
