@@ -48,7 +48,7 @@ def getpage(link: str, isAirline: bool, is_CH: bool):
     done.append(link)
     # récupération du contenu de la page
     soup = BeautifulSoup(data.text, "html.parser")
-    op_info = operator_info(soup, link)
+    op_info = operator_info(soup)
     compliance = compliance_info(soup, isAirline)
     if is_CH and isAirline:
         CH = CH_scrap(soup)
